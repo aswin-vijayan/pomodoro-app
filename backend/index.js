@@ -6,8 +6,8 @@ const passport = require('passport');
 const config = require('./config');
 const route = require('./Routes/route');
 const PORT = config.server.port;
-// logger & observability
-const logger = require('./Logger/logger');
+// observability
+const logger = require('./Observability/logger');
 const responseTime = require('response-time');
 const correlationIdMiddleware = require('./middlewares/correlationid');
 const client = require('prom-client');
@@ -207,3 +207,6 @@ app.listen(PORT, (err, client) => {
 
 
 module.exports = app;
+
+
+

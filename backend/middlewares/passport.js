@@ -1,8 +1,8 @@
 const passport = require('passport');
 const config = require('../config');
 const User = require('../Model/userModel');
-const logger = require('../Logger/logger');
-const logFormat = require('../Logger/logFormat');
+const logger = require('../Observability/logger');
+const logFormat = require('../Observability/logFormat');
 const metrics = require('../Observability/metrics');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 

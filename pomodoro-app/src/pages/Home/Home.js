@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import Timer from '../Timer/Timer';
 import config from '../../config';
+//
+// import { trace } from '@opentelemetry/api';
 
 const start = performance.now();
 let loadTime = 0;
@@ -11,7 +13,7 @@ export default function Home() {
     const [errCount, setErrCount] = useState(0);
 
     useEffect(() => {
-        window.addEventListener('error', (e) => {
+        window.addEventListener('error', () => {
             setErrCount(prev => prev + 1);
         });
         const sendLoadTimeToBackend = async () => {
@@ -19,20 +21,21 @@ export default function Home() {
             const end = performance.now();
             loadTime = end - start;
             await fetch(`${metrics_url}`, {
-            method: 'POST',
-            body: JSON.stringify({ app_time: loadTime, errorCount: errCount }),
-            headers: {
-                'Content-Type': 'application/json',
-            },
+                method: 'POST',
+                body: JSON.stringify({ app_time: loadTime, errorCount: errCount }),
+                headers: {
+                    'Content-Type': 'application/json',
+                },
             });
         } catch (err) {
             return;
         }
         };
         sendLoadTimeToBackend();
-    },[loadTime, errCount]);
-    
+    },[errCount]);
+
+     
     return (
-        <Timer/>
+        <Timer />
     )
 }

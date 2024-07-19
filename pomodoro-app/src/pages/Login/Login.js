@@ -10,7 +10,7 @@ const Login = () => {
     const { xCorrId, setLoginType } = useContext(UserContext)
     const navigate = useNavigate();
 
-    const [status, setStatus] = useState(false);
+    const [status, setStatus] = useState(null);
     const [userLogin, setUserLogin] = useState({
         email: '',
         password: ''
@@ -43,11 +43,25 @@ const Login = () => {
                 sessionStorage.setItem('userInfo', JSON.stringify(res.data))
                 navigate('/')
             })
+            .catch(err => {
+                console.log(err);
+                if (err.response && err.response.status === 403) {
+                    setStatus({ message: err.response.data.message });
+                } else {
+                    setStatus({ message: 'Verification failed' });
+                }
+            });
         })
         .catch(err => {
-            console.log(err)
-            if(err.code === 'ERR_NETWORK') {
+            console.log(err.response)
+            if(err.response && err.response.status === 401) {
+                setStatus({message: err.response.data.message})
+            } else if(err.response && err.response.status === 402) {
+                setStatus({message: err.response.data.message})
+            } else if(err.code === 'ERR_NETWORK') {
                 setStatus(err.message);
+            } else if(err.code === 'ERR_BAD_REQUEST') {
+                setStatus({message: 'Request failed with status code 401 - Axios Error'})
             }
         })
         setUserLogin({
@@ -65,24 +79,28 @@ const Login = () => {
     }
 
     const inlineStyle = {
-        color: getColor(),
+        // color: getColor(),
         borderRadius: '10px',
         padding: '5px'
     }
-    function getColor() {
-        if (status.success) {
-            return 'green'
-        } else {
-            return 'red'
-        }
-    }
+    // function getColor() {
+    //     if (status.success) {
+    //         return 'green'
+    //     } else {
+    //         return 'red'
+    //     }
+    // }
 
     return (
         <main className='main-container text-center'>
             <div className="form-container mx-auto pt-5">
                 <div className='form-wrapper mx-auto border border-outline-secondary p-2 bg-light'>
                     <h3 className='m-3'>LOGIN FORM</h3>
-                    {status ? <p style={inlineStyle}>{status.message ? status.message : status}</p> : null}
+                    {status ? 
+                        <p style={inlineStyle} className={status.success ? 'text-success' : 'text-danger'}>
+                            {status.message ? status.message : status}</p> 
+                    : null
+                    }
 
                     <form onSubmit={handleSubmit}>
                         <div className='w-75 mx-auto'>

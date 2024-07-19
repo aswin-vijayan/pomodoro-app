@@ -1,11 +1,17 @@
 import React, { useEffect, useState, useContext } from 'react';
 import Modal from 'react-bootstrap/Modal';
-import { Chart, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from 'chart.js/auto';
-import { Bar } from 'react-chartjs-2';
 import { UserContext } from '../../../App';
 import { MyContext } from '../Timer';
+// chart
+import Chart from 'chart.js/auto';
+import { CategoryScale } from 'chart.js';
+import { Bar } from 'react-chartjs-2'
+
+Chart.register(CategoryScale);
 
 const TReport = ({ report, setReport, list }) => {
+    const month = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sept', 'Oct', 'Nov', 'Dec']
+
     const { user } = useContext(UserContext);
     const { count } = useContext(MyContext);
 
@@ -14,8 +20,6 @@ const TReport = ({ report, setReport, list }) => {
     const [mtask, setMTask] = useState(null);
 
     const handleClose = () => setReport(false);
-
-    const month = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sept', 'Oct', 'Nov', 'Dec']
 
     useEffect(() => {
         if (user && list) {
@@ -38,7 +42,7 @@ const TReport = ({ report, setReport, list }) => {
             })
             const r = month.map((m, index) => {
                 let total = 0
-                ml.map(t => {
+                ml.forEach(t => {
                     if (Number(t.month) === index + 1) {
                         return total += t.act
                     }
@@ -46,7 +50,6 @@ const TReport = ({ report, setReport, list }) => {
                 return total
             });
             setMTask(r);
-            // })
         }
     }, [user, count, list])
 
@@ -57,7 +60,8 @@ const TReport = ({ report, setReport, list }) => {
             {
                 label: 'Focus time',
                 data: tasks,
-                backgroundColor: 'rgba(255, 99, 132, 0.5)'
+                backgroundColor: 'rgba(255, 99, 132, 0.5)',
+                borderWidth: 1
             }
         ]
     }
@@ -67,7 +71,8 @@ const TReport = ({ report, setReport, list }) => {
             {
                 label: 'Monhtly Focus time',
                 data: mtask,
-                backgroundColor: 'rgba(255, 99, 132, 0.5)'
+                backgroundColor: 'rgba(255, 99, 132, 0.5)',
+                borderWidth: 1
             }
         ]
     }

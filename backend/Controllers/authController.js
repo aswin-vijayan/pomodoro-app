@@ -1,7 +1,7 @@
 const passport = require('passport');
 const config = require('../config');
-const logger = require('../Logger/logger');
-const logFormat = require('../Logger/logFormat');
+const logger = require('../Observability/logger');
+const logFormat = require('../Observability/logFormat');
 const metrics = require('../Observability/metrics');
 const { tracer } = require('../Observability/jaegerTrace');
 
@@ -15,6 +15,7 @@ const failedRoute = (req, res) => {
         statusCode: res.statusCode,
     }
     span.addEvent('google auth failed');
+    span.setAttribute('error', true); // Mark this span as an error
     logger.error('Failed to route the login credentials', logFormat(req, logResult))
     span.end();
     return res.status(401).json({

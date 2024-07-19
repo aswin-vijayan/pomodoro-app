@@ -68,3 +68,9 @@ This section has moved here: [https://facebook.github.io/create-react-app/docs/d
 ### `npm run build` fails to minify
 
 This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+
+
+### my warnings
+
+1. Line 17:11:  The 'checkedTasks' conditional could make the dependencies of useEffect Hook (at line 36) change on every render. Move it inside the useEffect callback. Alternatively, wrap the initialization of 'checkedTasks' in its own useMemo() Hook  react-hooks/exhaustive-deps
+  ##### solution: useMemo()  - to memoize the values

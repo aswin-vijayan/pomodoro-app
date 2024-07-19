@@ -3,8 +3,8 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const config = require('../config');
 const ObjectId = require('mongodb').ObjectId;
-const logger = require('../Logger/logger');
-const logFormat = require('../Logger/logFormat');
+const logger = require('../Observability/logger');
+const logFormat = require('../Observability/logFormat');
 const { tracer } = require('../Observability/jaegerTrace');
 const metrics = require('../Observability/metrics');
  
@@ -14,7 +14,6 @@ let activeUser = new Set();
 const storeActiveUsers = (userId) => {
     if(userId) {
         activeUser.add(userId);
-        console.log(`No.of users visited: ${activeUser.size}`)
         // set activeuser gauge
         metrics.activeUsersGauge.set(activeUser.size);
     } else {
@@ -22,7 +21,6 @@ const storeActiveUsers = (userId) => {
     }
     const resetActiveUser = () => {
         activeUser = new Set();
-        console.log('active user reset');
         metrics.activeUsersGauge.set(0)
     }
     const scheduleDailyReset = () => {
@@ -67,7 +65,6 @@ const signup = async (req, res) => {
         const exisitngUser = await User.findOne({ email: req.body.email });
         
         if(exisitngUser) {
-            span.addEvent('User already registered');
             return res.status(400).json({
                 message: "User already registered",
                 success: "warning"
@@ -111,6 +108,7 @@ const signup = async (req, res) => {
     } catch(err) {
         span.addEvent('Error during registration', {'error': err.message});
         metrics.errorCounter.inc();
+        span.setAttribute('error', true); // Mark this span as an error
         logger.error('Error in registration')
         span.end();
     }
@@ -118,10 +116,9 @@ const signup = async (req, res) => {
 
 const login = async (req, res) => {
     //
-    await callReportTrace();
-    // const span = tracer.startSpan('Login', {
-    //     attributes: { 'x-correlation-id': req.correlationId }
-    // });
+    const span = tracer.startSpan('Login', {
+        attributes: { 'x-correlation-id': req.correlationId }
+    });
     metrics.httpRequestCounter.inc();
 
     try {
@@ -162,6 +159,7 @@ const login = async (req, res) => {
                 span.addEvent('login password incorrect', { requestBody: JSON.stringify(logResult) })
                 logger.info('Password is incorrect', logFormat(req, logResult));
                 metrics.errorCounter.inc();
+                span.setAttribute('error', true); // Mark this span as an error
                 span.end();
                 return res.status(401).json({
                     message: "Password is incorrect",
@@ -171,9 +169,10 @@ const login = async (req, res) => {
         } else {
             span.addEvent('wrong user email and password', { requestBody: JSON.stringify(req.body) })
             logger.info('User does not exist. Create new user', logFormat(req, res.statusCode))
+            span.setAttribute('error', true); // Mark this span as an error
             metrics.errorCounter.inc();
             span.end();
-            return res.status(401).json({
+            return res.status(402).json({
                 message: 'User does not exist. Create new user',
                 success: false
             })
@@ -181,6 +180,7 @@ const login = async (req, res) => {
     } catch(err) {
         span.addEvent('Error during login', {'error': err.message});
         metrics.errorCounter.inc();
+        span.setAttribute('error', true); // Mark this span as an error
         span.end();
     }
 }
@@ -198,6 +198,7 @@ const verifyUser = async (req, res) => {
         //
         span.addEvent('Invalid login token');
         logger.error('Invalid token', logFormat(req, res.statusCode))
+        span.setAttribute('error', true); // Mark this span as an error
         span.end();
         return res.status(403).json({
             message: "Invalid token",
@@ -209,6 +210,7 @@ const verifyUser = async (req, res) => {
             span.addEvent('valid token', {requestBody: JSON.stringify(result)});
             logger.error('Token generated but user is not verified', logFormat(req, res.statusCode))
             metrics.errorCounter.inc();
+            span.setAttribute('error', true); // Mark this span as an error
             span.end()
             return res.status(401).json({
                 message: "Invalid user credentials",
@@ -246,6 +248,7 @@ const verifyUser = async (req, res) => {
         catch (err) {
             span.addEvent('Error in authenticating user', { 'error': err.message });
             metrics.errorCounter.inc();
+            span.setAttribute('error', true); // Mark this span as an error
             span.end();
         }
     })
@@ -293,6 +296,7 @@ const updateUser = async (req, res) => {
         span.addEvent('Error in updating user', {'error': err.message});
         logger.error('Error in updating user info')
         metrics.errorCounter.inc();
+        span.setAttribute('error', true); // Mark this span as an error
         span.end();
     }
 }

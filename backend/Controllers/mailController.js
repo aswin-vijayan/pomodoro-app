@@ -1,8 +1,8 @@
 const nodemailer = require('nodemailer');
 const config = require('../config');
 const Subscribers = require('../Model/subscriberModel');
-const logger = require('../Logger/logger');
-const logFormat = require('../Logger/logFormat');
+const logger = require('../Observability/logger');
+const logFormat = require('../Observability/logFormat');
 const metrics = require('../Observability/metrics');
 const { tracer} = require('../Observability/jaegerTrace');
 
@@ -72,6 +72,7 @@ const sendMails = async(req, res) => {
             }
             span.addEvent('subscription mail failed to sent')
             logger.error('Failed to sent email subscription', logFormat(req, logResult))
+            span.setAttribute('error', true); // Mark this span as an error
             span.end();
             console.log("Error in sending mail", err)
         }
