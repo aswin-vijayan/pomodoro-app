@@ -1,5 +1,5 @@
 const config = require('../config');
-const { BasicTracerProvider, ConsoleSpanExporter, BatchSpanProcessor, SimpleSpanProcessor } = require('@opentelemetry/tracing');
+const { SimpleSpanProcessor } = require('@opentelemetry/tracing');
 const { JaegerExporter } = require('@opentelemetry/exporter-jaeger');
 const { Resource } = require('@opentelemetry/resources');
 const { SemanticResourceAttributes } = require('@opentelemetry/semantic-conventions');
@@ -9,45 +9,32 @@ const { MongoDBInstrumentation } = require('@opentelemetry/instrumentation-mongo
 const { ExpressInstrumentation } = require('@opentelemetry/instrumentation-express');
 const { HttpInstrumentation } = require('@opentelemetry/instrumentation-http');
 const { registerInstrumentations } = require('@opentelemetry/instrumentation');
-const { diag, DiagConsoleLogger, DiagLogLevel } = require('@opentelemetry/api');
-const { OTTracePropagator } = require('@opentelemetry/propagator-ot-trace');
 
-//
-// Configure logger to capture OpenTelemetry logs
-diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.INFO);
 
 // create jaeger exporter
-const exporter = new JaegerExporter({
-    tags: [],
-    serviceName: 'report-traces',
-    endpoint: `${config.observability.jaeger_trace_url}/api/traces`
-})
+const exporter = new JaegerExporter({ endpoint: `${config.observability.jaeger_trace_url}/api/traces` })
 
 const provider = new NodeTracerProvider({
     resource: new Resource({
-        [SemanticResourceAttributes.SERVICE_NAME]: 'report-traces'
+        [SemanticResourceAttributes.SERVICE_NAME]: 'reports-backend'
     }),
 })
 
 // add jaeger-exporter to span processor
-// provider.addSpanProcessor(new SimpleSpanProcessor(exporter));
-provider.addSpanProcessor(new BatchSpanProcessor(exporter));
+provider.addSpanProcessor(new SimpleSpanProcessor(exporter));
 
 // register
-provider.register({propagator: new OTTracePropagator()});
+provider.register();
 // register instrumentation
 registerInstrumentations({
     instrumentations: [
         new ExpressInstrumentation(), 
         new HttpInstrumentation(),
-        new MongoDBInstrumentation({
-            enhancedDatabaseReporting: true,
-            serviceName: 'mongodb_database'
-        })
+        new MongoDBInstrumentation()
     ],
 });
 
 //
-const tracer = provider.getTracer('report-traces');
+const tracer = provider.getTracer('reports-backend');
 
 module.exports = { tracer };

@@ -9,7 +9,7 @@ const metrics = require('./Observability/metrics');
 const logger =require('./Observability/logger');
 const logFormat = require('./Observability/logFormat');
 const { tracer } = require('./Observability/trace');
-const { log } = require('winston');
+const { trace, context, propagation } = require('@opentelemetry/api');
 const port = config.server.port;
 
 const app = express();
@@ -19,7 +19,7 @@ app.use(cors());
 
 // connect to database
 const mongoUrl = config.database.mongoUrl;
-const db = mongoose.connect(mongoUrl);
+const db = mongoose.connect(mongoUrl, { maxPoolSize: 10 });
 
 
 // http response time for each routes
@@ -62,45 +62,56 @@ app.get('/metrics', async (req, res) => {
     res.end(await metrics.register.metrics());
 });
 
-
 app.post('/tasks', async (req, res) => {
+    // Extract the propagated context from headers
+    const parentCtx = propagation.extract(context.active(), req.headers)
+
     const span = tracer.startSpan('User task list', {
         attributes: { 'x-correlation-id': req.correlationId }
-    });
+    }, parentCtx);
+
+    // set current context with new span
+    const ctx = trace.setSpan(context.active(), span)
+
     metrics.httpRequestCounter.inc();
     
     try {
-        const queryStartTime = process.hrtime();
-        const existingUser = await TaskTracker.findOne({ "userData.email": req.body.email });
-        //
-        const queryEndTime = process.hrtime(queryStartTime);
-        const queryDuration = queryEndTime[0] * 1e9 + queryEndTime[1];
-        metrics.databaseQueryDurationHistogram.observe({operation: 'Task list - findOne', success: existingUser ? 'true': 'false'}, queryDuration / 1e9);
-        
-        const logResult = {
-            userId: req.body? req.body.userId : null,
-            emailId: req.body? req.body.email : null,
-            statusCode: res.statusCode,
-        }
-        if(existingUser) {
-            span.addEvent('user task list sent to browser', {requestBody: req.body.email})
-            logger.info('sent task-list to browser', logFormat(req, logResult));
-            span.end();
-            return res.status(200).send(existingUser)
-        } else {
-            span.addEvent('Failed to send user task list to browser', {requestBody: req.body.email})
-            metrics.errorCounter.inc()
-            logger.error('Wrong email-id. Please log again', logFormat(req, req.body.email))
-            span.end();
-            // return res.send(400).send('User not found :(');
-        }
+        // run following code within context of new span
+        await context.with(ctx, async() => {
+            const queryStartTime = process.hrtime();
+            const existingUser = await TaskTracker.findOne({ "userData.email": req.body.email })
+            const queryEndTime = process.hrtime(queryStartTime);
+            const queryDuration = queryEndTime[0] * 1e9 + queryEndTime[1];            
+            metrics.databaseQueryDurationHistogram.observe({operation: 'Task list - findOne', success: existingUser ? 'true': 'false'}, queryDuration / 1e9);
+            
+            const logResult = {
+                userId: req.body? req.body.userId : null,
+                emailId: req.body? req.body.email : null,
+                statusCode: res.statusCode,
+            }
+            if(existingUser) {                
+                span.addEvent('user task list sent to browser', {requestBody: req.body.email})
+                logger.info('sent task-list to browser', logFormat(req, logResult));
+                span.end();
+                return res.status(200).json(existingUser)
+            } else {
+                span.addEvent('Failed to send user task list to browser', {requestBody: req.body.email})
+                metrics.errorCounter.inc()
+                span.setAttribute('error', true); // Mark this span as an error
+                logger.error('Wrong email-id. Please log again', logFormat(req, req.body.email))
+                span.end()
+                return res.send(400).send('User not found :(');
+            }
+        })
     }
     catch (err) {
+        span.recordException(err)
+        span.setAttribute('error', true); // Mark this span as an error
         span.addEvent('Error during new task creation', {'error': err.message});
         metrics.errorCounter.inc()
         logger.error('Tasklist did not sent to client', logFormat(req, err))
-        span.end();
-        console.log(err);
+        span.end()
+        res.status(500).send('Internal Server Error');
     }
 });
 

@@ -7,7 +7,7 @@ import Signup from './pages/Signup/Signup';
 import ErrorPage from './ErrorPage';
 import Header from './components/Header/Header';
 import Footer from './components/Footer/Footer';
-import React, { createContext, useEffect, useState } from 'react';
+import React, { createContext, useCallback, useEffect, useState } from 'react';
 import axios from 'axios';
 import config from './config';
 
@@ -21,22 +21,14 @@ function App() {
     return getUser ? getUser : getGoogleUser
   });
   const [xCorrId, setXCorrId] = useState(() => {
-    return sessionStorage.getItem('xCorrId') || null  
+    return sessionStorage.getItem('xCorrId') || null
   });
-  const [ loginType, setLoginType ] = useState(() => {
+  const [loginType, setLoginType] = useState(() => {
     return sessionStorage.getItem('loginType') || 'custom';
   });
 
-  useEffect(() => {
-    if (user) {
-      setXCorrId(user.xCorrId);
-    }
-    if (loginType === 'google') {
-      fetchGoogleUser();
-    }
-  },[user, loginType])
-
-  function fetchGoogleUser() {
+  // usecallback()
+  const fetchGoogleUser = useCallback(() => {
     axios.get(`${apiUrl}/auth/login/success`, {
       withCredentials: 'include',
       headers: {
@@ -45,12 +37,23 @@ function App() {
         "Access-Control-Allow-Credentials": true
       }
     })
-    .then(response => {
-      sessionStorage.setItem('guser', JSON.stringify(response.data.user))
-      setXCorrId(sessionStorage.getItem('xCorrId'));
-      return setUser(response.data.user)
-    })
-  }
+      .then(response => {
+        sessionStorage.setItem('guser', JSON.stringify(response.data.user))
+        setXCorrId(sessionStorage.getItem('xCorrId'));
+        return setUser(response.data.user)
+      })
+  }, [xCorrId])
+
+  useEffect(() => {
+    if (user) {
+      setXCorrId(user.xCorrId);
+    }
+    if (loginType === 'google') {
+      fetchGoogleUser();
+    }
+  }, [user, loginType])
+
+
 
   return (
     <UserContext.Provider value={{ user, setUser, xCorrId, setXCorrId, setLoginType }}>

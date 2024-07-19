@@ -115,22 +115,27 @@ const TimerUI = ({ finish, setFinish }) => {
     useEffect(() => {
         // set date and finished tasks
         sessionStorage.setItem('date', JSON.stringify(new Date().toLocaleString('en-US').split(", ")[0]))
+        const postData = async () => { 
         // task info
-        if (finish.length !== 0 && user) {
-            try {
-                axios.post(`${apiUrl}/createTask`, {
-                    date: JSON.parse(sessionStorage.getItem('date')),
-                    userData: user,
-                    userTasks: finish,
-                }, {
-                    headers: {
-                        'x-correlation-id': xCorrId
-                    }
-                })
-            } catch(err) {
-                setMessage(err.message)
-            }       
+            if (finish.length !== 0 && user) {
+                try {
+                    await axios.post(`${apiUrl}/createTask`, {
+                        date: JSON.parse(sessionStorage.getItem('date')),
+                        userData: user,
+                        userTasks: finish,
+                    }, {
+                        headers: {
+                            'x-correlation-id': xCorrId
+                        }
+                    });
+
+                } catch(err) {
+                    setMessage(err.message)
+                }       
+            }
         }
+
+        postData()
     }, [finish, user, xCorrId])
 
     const handleStart = () => {

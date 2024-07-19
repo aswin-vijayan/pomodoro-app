@@ -7,7 +7,7 @@ import TReport from './TReport';
 import { UserContext } from '../../../App';
 import { MyContext } from '../Timer';
 
-const reportsUrl = config.reportsUrl;
+const apiUrl = config.apiUrl;
 
 const TNavbar = () => {
     // context
@@ -25,7 +25,7 @@ const TNavbar = () => {
 
     useEffect(() => {
         if (user) {
-            axios.post(`${reportsUrl}/tasks`, user, {
+            axios.post(`${apiUrl}/reportService`, user, {
                 headers: {
                     'x-correlation-id': xCorrId
                 }

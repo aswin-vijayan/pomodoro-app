@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from 'react'
+import React, { useContext, useEffect, useMemo } from 'react'
 import { MyContext } from '../Timer';
 import TaskButtons from './TaskButtons';
 import '../Timer.css';
@@ -14,8 +14,24 @@ const TaskForm = ({ form, setForm, isUpdate, setIsUpdate }) => {
     const { user, xCorrId } = useContext(UserContext);
     
     const todayDate = JSON.parse(sessionStorage.getItem('date'));
-    const checkedTasks = sessionStorage.getItem('checkedTasks') ? JSON.parse(sessionStorage.getItem('checkedTasks')) : [];
-    const todaysTask = sessionStorage.getItem('todaysTask') ? JSON.parse(sessionStorage.getItem('todaysTask')) : [];
+    const checkedTasks = sessionStorage.getItem('checkedTasks') ? 
+            JSON.parse(sessionStorage.getItem('checkedTasks')) 
+            : []
+    const todaysTask = sessionStorage.getItem('todaysTask') ? 
+            JSON.parse(sessionStorage.getItem('todaysTask')) 
+            : []
+
+    // warnings
+    // const checkedTasks = useMemo(() => {
+    //     return sessionStorage.getItem('checkedTasks') ? 
+    //         JSON.parse(sessionStorage.getItem('checkedTasks')) 
+    //         : []
+    // }, [])  // Empty dependency array means this memoization runs only once
+    // const todaysTask = useMemo(() => {
+    //     return sessionStorage.getItem('todaysTask') ? 
+    //         JSON.parse(sessionStorage.getItem('todaysTask')) 
+    //         : []
+    // }, [])  // Empty dependency array means this memoization runs only once
 
     useEffect(() => {
          // if user logged again today ? integrate old tasks to today's tasks 
@@ -27,18 +43,10 @@ const TaskForm = ({ form, setForm, isUpdate, setIsUpdate }) => {
                 }
             })
             .then(res => {
-                // if(checkedTasks || todaysTask) {
-                    const combinedTasks = [...res.data, ...checkedTasks, ...todaysTask];
-                    const uniqueTask = combinedTasks.filter((obj, index) => index === combinedTasks.findIndex(o => o.id === obj.id)) 
-                    sessionStorage.setItem('todaysTask', JSON.stringify(uniqueTask))
-                // }
-                // if(checkedTasks) {
-                //     sessionStorage.setItem('todaysTask', JSON.stringify([...res.data, ...checkedTasks]))
-                // } else {
-                //     sessionStorage.setItem('todaysTask', JSON.stringify([...res.data]))
-                // }
+                const combinedTasks = [...res.data, ...checkedTasks, ...todaysTask];
+                const uniqueTask = combinedTasks.filter((obj, index) => index === combinedTasks.findIndex(o => o.id === obj.id)) 
+                sessionStorage.setItem('todaysTask', JSON.stringify(uniqueTask))
             })
-            
         }
     },[todayDate, checkedTasks, todaysTask, user])
 
