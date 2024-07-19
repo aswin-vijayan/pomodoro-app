@@ -74,7 +74,6 @@ const sendMails = async(req, res) => {
             logger.error('Failed to sent email subscription', logFormat(req, logResult))
             span.setAttribute('error', true); // Mark this span as an error
             span.end();
-            console.log("Error in sending mail", err)
         }
         else {
             const logResult = {
