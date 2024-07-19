@@ -6,7 +6,6 @@ const config = {
     },
     database: {
         mongoUrl: process.env.MONGODB_URL,
-        db_name: process.env.DB_NAME
     },
     observability: {
         jaeger_trace_url: process.env.JAEGER_TRACE_URI
@@ -14,3 +13,5 @@ const config = {
 }
 
 module.exports = config;
+
+        // db_name: process.env.DB_NAME
