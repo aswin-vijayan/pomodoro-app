@@ -31,7 +31,11 @@ const TNavbar = () => {
                 }
             })
             .then(res => {
-                setList(res.data)
+                if(res.data.task){
+                    setList(res.data)
+                } else {
+                    setList(null)
+                }
             })
         }
     },[user, count])
