@@ -31,7 +31,7 @@ const TNavbar = () => {
                 }
             })
             .then(res => {
-                if(res.data.task){
+                if(res.data){
                     setList(res.data)
                 } else {
                     setList(null)
