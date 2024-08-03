@@ -139,7 +139,7 @@ const reportService = async (req, res) => {
                 headers: headers
             })
             span.end()
-            return res.status(200).json(result.data)
+            return res.status(200).json(result.data.existingUser)
         })
     }
     catch (err) {
