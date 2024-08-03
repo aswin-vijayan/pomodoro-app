@@ -84,7 +84,7 @@ by user and system code respective;y.
 - *Units*: Count
 - *Measuremen*: Counter
 
-### User Metrics
+#### User Metrics
 --------------------
 ##### Active users:
 - Number of acive users per day
@@ -96,7 +96,7 @@ by user and system code respective;y.
 - *Unit*: Count
 - *Meaurement*: Gauge
 
-### Tasks Metrics
+#### Tasks Metrics
 --------------------------
 ##### Tasks created:
 - Number of tasks created overall
